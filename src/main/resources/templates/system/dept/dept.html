@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://cdn.staticfile.org/jquery/2.1.1/jquery.min.js"></script>
+	<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <th:block th:include="include :: header('部门列表')" />
+	<th:block th:include="include :: ztree-css" />
+</head>
+<body class="gray-bg" >
+	<div class="container-div">
+		<div class="row">
+		<!--	<div class="col-sm-12 search-collapse">
+				<form id="dept-form">
+					<div class="select-list">
+						<ul>
+							<li>
+								部门名称：<input type="text" name="deptName"/>
+							</li>
+						&lt;!&ndash;	<li>
+								部门状态：<select name="status" th:with="type=${@dict.getType('sys_normal_disable')}">
+									<option value="">所有</option>
+									<option th:each="dict : ${type}" th:text="${dict.dictLabel}" th:value="${dict.dictValue}"></option>
+								</select>
+							</li>&ndash;&gt;
+							<li>
+								<a class="btn btn-primary btn-rounded btn-sm" onclick="$.treeTable.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+								<a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+							</li>
+						</ul>
+					</div>
+				</form>
+			</div>-->
+                
+
+
+			<div class="col-sm-12 select-table table-striped">
+	            <table id="bootstrap-tree-table" style="width: 100%"><thead>
+				<th>部门名称</th>
+				<th>负责人</th>
+				<th>状态</th>
+				<th>创建时间</th>
+				<th>操作</th>
+				</thead>
+					<tbody id="tbody">
+
+					</tbody>
+				</table>
+	        </div>
+	    </div>
+	</div>
+	<div class="modal fade" id="one" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+						&times;
+					</button>
+					<h4 class="modal-title" id="myModalLabel">
+						<input type="hidden" value="" id="deptidd" >
+					</h4>
+				</div>
+				<div class="modal-body">
+
+				<table>
+					<tr><td>上级部门:</td><td>
+						<select id="parentId"  name="parentId" value="">
+							<option value="100" selected="selected">---华清远见---</option>
+							<option value="101">---深圳总公司---</option>
+							<option value="102">---长沙分公司---</option>
+							<option value="201">---成都分公司---</option>
+						</select></td></tr>
+					<tr><td>部门名称:</td><td><input type="text" id="deptName"></td></tr>
+					<tr><td>显示排序:</td><td><input type="text" id="orderNum"></td></tr>
+					<tr><td>负责人:</td><td><input type="text" id="leader"></td></tr>
+					<tr><td>联系电话:</td><td><input type="text" id="phone"></td></tr>
+					<tr><td>邮箱:</td><td><input type="text" id="email"></td></tr>
+					<tr><td>部门状态:</td><td><input type="text" id="status"></td></tr>
+				</table>
+
+
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭
+					</button>
+					<button type="button" class="btn btn-primary" onclick="sure()">
+						提交更改
+					</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal -->
+	</div>
+
+    <th:block th:include="include :: footer" />
+	<th:block th:include="include :: ztree-js"/>
+	<script >
+		var parentId;
+		var deptName;
+		var orderNum;
+		var leader;
+		var email;
+		var phone;
+		var status;
+		var deptId;
+		function jiesan(obj) {
+			var bbb=confirm("确定要解散该部门吗？");
+			if(bbb){
+			var	Id=$(obj).parent().parent().find("td").eq(5).text();
+			console.log(Id);
+			$.ajax({
+				type:"get",
+				dataType:"json",
+				url:"/system/dept/dele",
+				data:{deptId:Id},
+				success:function (data) {
+					/*var html="<tr>\n" +
+							"\t\t\t\t\t\t<td>华清远见</td>\n" +
+							"\t\t\t\t\t\t<td>0</td>\n" +
+							"\t\t\t\t\t\t<td>正常</td>\n" +
+							"\t\t\t\t\t\t<td>2004-01-01 &nbsp;&nbsp;11:33:00</td>\n" +
+							"\t\t\t\t\t\t<td></td>\n" +
+							"\t\t\t\t\t</tr>";
+					for (var i = 0; i <data.length ; i++) {
+						html+="<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button onclick='show(this)'>*</button>"+data[i].deptName+"</td><td>"+data[i].leader+"</td><td>"+data[i].status+"</td><td>"+data[i].createTime+"</td><td>" +
+								"<button onclick='qife(this)'>变动</button><button onclick='add()'>设立新部门</button></td><td style='visibility: hidden'>"+ data[i].deptId+"</td></tr>"
+					}
+					$("#tbody").html(html);*/
+					show();
+				}
+			})
+			}
+		}
+		function add(){
+			clear();
+
+			$("#one").modal("show");
+		}
+		function qife(obj){
+			deptId=$(obj).parent().parent().find("td").eq(5).text();
+			$.ajax({
+				type:"get",
+				dataType:"json",
+				url:"/system/dept/one",
+				data:{deptId:deptId},
+				success:function (data) {
+					parentId=data.parentId;
+					deptName=data.deptName;
+					orderNum=data.orderNum;
+					leader=data.leader;
+					phone=data.phone;
+					email=data.email;
+					status=data.status;
+					$("#parentId").val(parentId);
+					$("#deptName").val(deptName);
+					$("#orderNum").val(orderNum);
+					$("#leader").val(leader);
+					$("#phone").val(phone);
+					$("#email").val(email);
+					$("#status").val(status);
+					$("#deptidd").val(deptId);
+					$("#one").modal("show");
+				}
+			})
+
+		}
+		function clear(){
+			 parentId="";
+			 deptName="";
+			 orderNum="";
+			 leader="";
+			 email="";
+			 status="";
+			 deptId=null;
+			$("#parentId").val("");
+			$("#deptName").val("");
+			$("#orderNum").val("");
+			$("#leader").val("");
+			$("#phone").val("");
+			$("#email").val("");
+			$("#status").val("");
+			$("#deptidd").val("");
+		}
+		function sure(){
+
+			if(deptId!=null){
+					$.ajax({
+						data:{"deptId":$("#deptidd").val(),
+							"parentId":$("#parentId").val(),
+							"deptName":$("#deptName").val(),
+							"orderNum":$("#orderNum").val(),
+							"leader":$("#leader").val(),
+							"phone":$("#phone").val(),
+							"email":$("#email").val(),
+							"status":$("#status").val()
+						},
+						type:"post",
+						dataType:"json",
+						url:"/system/dept/update",
+						success:function (data) {
+							/*var html="<tr>\n" +
+									"\t\t\t\t\t\t<td>华清远见</td>\n" +
+									"\t\t\t\t\t\t<td>0</td>\n" +
+									"\t\t\t\t\t\t<td>正常</td>\n" +
+									"\t\t\t\t\t\t<td>2004-01-01 &nbsp;&nbsp;11:33:00</td>\n" +
+									"\t\t\t\t\t\t<td></td>\n" +
+									"\t\t\t\t\t</tr>";
+							for (var i = 0; i <data.length ; i++) {
+								html+="<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button onclick='show(this)'>*</button>"+data[i].deptName+"</td><td>"+data[i].leader+"</td><td>"+data[i].status+"</td><td>"+data[i].createTime+"</td><td>" +
+										"<button onclick='qife(this)'>变动</button><button onclick='add()'>设立新部门</button></td><td style='visibility: hidden'>"+ data[i].deptId+"</td></tr>"
+							}
+							$("#tbody").html(html);*/
+							show();
+							clear();
+							$("#one").modal("hide");
+						}
+
+					})
+				}if(deptId==null){
+				$.ajax({
+					data:{
+						"parentId":$("#parentId").val(),
+						"deptName":$("#deptName").val(),
+						"orderNum":$("#orderNum").val(),
+						"leader":$("#leader").val(),
+						"phone":$("#phone").val(),
+						"email":$("#email").val(),
+						"status":$("#status").val()
+					},
+					type:"post",
+					dataType:"json",
+					url:"/system/dept/add",
+					success:function (data) {
+						/*var html="<tr>\n" +
+								"\t\t\t\t\t\t<td>华清远见</td>\n" +
+								"\t\t\t\t\t\t<td>0</td>\n" +
+								"\t\t\t\t\t\t<td>正常</td>\n" +
+								"\t\t\t\t\t\t<td>2004-01-01 &nbsp;&nbsp;11:33:00</td>\n" +
+								"\t\t\t\t\t\t<td></td>\n" +
+								"\t\t\t\t\t</tr>";
+						for (var i = 0; i <data.length ; i++) {
+							html+="<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button onclick='show(this)'>*</button>"+data[i].deptName+"</td><td>"+data[i].leader+"</td><td>"+data[i].status+"</td><td>"+data[i].createTime+"</td><td>" +
+									"<button onclick='qife(this)'>变动</button><button onclick='add()'><i class=\"fa fa-plus\">设立新部门</button></td><td style='visibility: hidden'>"+ data[i].deptId+"</td></tr>"
+						}
+						$("#tbody").html(html);*/
+						show();
+						clear();
+						$("#one").modal("hide");
+					}
+
+				})
+			}
+
+		}
+
+	/*	var settings = {
+			data: {
+				simpleData: {
+					enable: true,  //true 、 false 分别表示 使用 、 不使用 简单数据模式
+					idKey: "deptId",   //节点数据中保存唯一标识的属性名称
+					pIdKey: "parentId",    //节点数据中保存其父节点唯一标识的属性名称
+					//rootPId: -1  用于修正根节点父节点数据，即 pIdKey 指定的属性值
+				},
+				key:{
+					name:"name"
+				}
+
+			}
+		};*/
+	$(function () {
+	/*	let zTreeObj;
+		var z="";
+*/
+		$.ajax({
+			type:"get",
+			dataType:"json",
+			url:"/system/dept/list",
+			async:true,
+			success:function (data) {
+				var html="<tr>\n" +
+						"\t\t\t\t\t\t<td>华清远见</td>\n" +
+						"\t\t\t\t\t\t<td>0</td>\n" +
+						"\t\t\t\t\t\t<td>正常</td>\n" +
+						"\t\t\t\t\t\t<td>2004-01-01 &nbsp;&nbsp;11:33:00</td>\n" +
+						"\t\t\t\t\t\t<td></td>\n" +
+						"\t\t\t\t\t</tr>";
+				for (var i = 0; i <data.length ; i++) {
+					html+="<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button onclick='f1(this)'>*</button>"+data[i].deptName+"</td><td>"+data[i].leader+"</td><td>"+data[i].status+"</td><td>"+data[i].createTime+"</td><td>" +
+							"<button onclick='qife(this)' style='background-color: #1a7bb9; color: white'  ><i class=\"fa fa-edit\"></i>变动</button><button onclick='add()' style='background-color: #00a65a; color: white'><i class=\"fa fa-plus\">设立新部门</button></td><td style='visibility: hidden'>"+ data[i].deptId+"</td></tr>"
+				}
+				$("#tbody").html(html);
+				/*for (var i = 0; i <data.length ; i++) {
+					z+=data[i]
+
+				}
+
+				zTreeObj = $.fn.zTree.init($("#tbody"), settings, JSON.parse(z)); //初始化树
+				zTreeObj.expandAll(true);   //true 节点全部展开、false节点收缩*/
+			}
+		})
+	})
+		var shen=false;
+		var chang =false;
+		var chen=false;
+		function f1(obj) {
+			var Id=$(obj).parent().parent().find("td").eq(5).text();
+			if(Id==101){
+			if(shen==false){
+				shen=true;
+			}else {
+				shen=false;
+			}
+			}if(Id==102){
+				if(chang==false){
+					chang=true;
+				}else {
+					chang=false;
+				}
+			}if(Id==201){
+				if(chen==false){
+					chen=true;
+				} else {
+					chen=false;
+				}
+			}
+			console.log("shen"+shen);
+			console.log("chang"+chang);
+			console.log("chen"+chen);
+			show();
+		}
+
+		function show() {
+			console.log("show");
+			$.ajax({
+				type:"get",
+				dataType:"json",
+				url:"/system/dept/tree",
+				success:function (map) {
+						console.log("success");
+						var html="<tr>\n" +
+								"\t\t\t\t\t\t<td>华清远见</td>\n" +
+								"\t\t\t\t\t\t<td>0</td>\n" +
+								"\t\t\t\t\t\t<td>正常</td>\n" +
+								"\t\t\t\t\t\t<td>2004-01-01 &nbsp;&nbsp;11:33:00</td>\n" +
+								"\t\t\t\t\t\t<td></td>\n" +
+								"\t\t\t\t\t</tr>";
+						for (var i = 0; i <map.dept.length ; i++) {
+								html += "<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button onclick='f1(this)'>*</button>" + map.dept[i].deptName + "</td><td>" + map.dept[i].leader + "</td><td>" + map.dept[i].status + "</td><td>" + map.dept[i].createTime + "</td><td>" +
+										"<button onclick='qife(this)'  style='background-color: #1a7bb9; color: white' ><i class=\"fa fa-edit\"></i>变动</button><button onclick='add()' style='background-color: #00a65a; color: white'><i class=\"fa fa-plus\">设立新部门</button></td><td style='visibility: hidden'>" + map.dept[i].deptId + "</td></tr>"
+									if(shen==true&&map.dept[i].deptId==101){
+										console.log("101");
+										for (var j = 0; j <map.sons.length ; j++) {
+											html+= "<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + map.sons[j].deptName + "</td><td>" +map.sons[j].leader + "</td><td>" + map.sons[j].status + "</td><td>" + map.sons[j].createTime + "</td><td>" +
+													"<button onclick='qife(this)' style='background-color: #1a7bb9; color: white' ><i class=\"fa fa-edit\"></i>变动</button><button onclick='jiesan(this)' style='color: white;background-color: #33cabb'>解散</button></td><td style='visibility: hidden'>" + map.sons[j].deptId + "</td></tr>"
+										}
+									}
+							if(chang==true&&map.dept[i].deptId==102){
+								console.log("102");
+								for (var j = 0; j <map.sons1.length ; j++) {
+									html+= "<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + map.sons1[j].deptName + "</td><td>" +map.sons1[j].leader + "</td><td>" + map.sons1[j].status + "</td><td>" + map.sons1[j].createTime + "</td><td>" +
+											"<button onclick='qife(this)'style='background-color: #1a7bb9; color: white' ><i class=\"fa fa-edit\"></i>变动</button><button onclick='jiesan(this)' style='color: white;background-color: #33cabb'>解散</button></td><td style='visibility: hidden'>" + map.sons1[j].deptId + "</td></tr>"
+								}
+							}
+							if(chen==true&&map.dept[i].deptId==201){
+								console.log("201");
+								for (var j = 0; j <map.sons2.length ; j++) {
+									html+= "<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + map.sons2[j].deptName + "</td><td>" +map.sons2[j].leader + "</td><td>" + map.sons2[j].status + "</td><td>" + map.sons2[j].createTime + "</td><td>" +
+											"<button onclick='qife(this)'style='background-color: #1a7bb9; color: white' ><i class=\"fa fa-edit\"></i>变动</button><button onclick='jiesan(this)' style='color: white;background-color: #33cabb'>解散</button></td><td style='visibility: hidden'>" + map.sons2[j].deptId + "</td></tr>"
+								}
+							}
+						}
+						$("#tbody").html(html);
+
+				}
+			})
+		}
+
+	</script>
+</body>
+</html>

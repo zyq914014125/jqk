@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+	<th:block th:include="include :: header('岗位列表')" />
+</head>
+<body class="gray-bg" onload="load(1)">
+<div class="container-div">
+	<div class="row">
+		<div class="col-sm-12 search-collapse">
+			<form id="post-form">
+				<div class="select-list">
+					<ul>
+						<li>
+							岗位编码：<input type="text" name="postCode" id="postCodeSelect"/>
+						</li>
+						<li>
+							岗位名称：<input type="text" name="postName" id="postNameSelect"/>
+						</li>
+						<li>
+							岗位状态：<select name="statusSelect" id="statusSelect">
+							<option value="">所有</option>
+							<option value="0">正常</option>
+							<option value="1">停运</option>
+						</select>
+						</li>
+						<li>
+							<button type="button" class="btn btn-success btn-sm" onclick="select()"><i class="fa fa-refresh"></i>&nbsp;搜索</button>
+<!--							<a class="btn btn-primary btn-rounded btn-sm" onclick="select()"><i class="fa fa-search"></i>&nbsp;搜索</a>-->
+							<a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+						</li>
+					</ul>
+				</div>
+			</form>
+		</div>
+
+
+
+		<div class="col-sm-12 select-table table-striped">
+			<div class="btn-group-sm" id="toolbar" role="group">
+				<a class="btn btn-success" onclick="addPage()">
+					<i class="fa fa-plus"></i> 新增
+				</a>
+				<!--<a class="btn btn-primary single disabled" onclick="$.operate.edit()">
+					<i class="fa fa-edit"></i> 修改
+				</a>-->
+				<a class="btn btn-danger btn-xs" onclick="deleteAll()">
+					<i class="fa fa-remove"></i> 批量删除
+				</a>
+				<!--<a class="btn btn-warning" onclick="$.table.exportExcel()">
+					<i class="fa fa-download"></i> 导出
+				</a>-->
+			</div><br>
+			<table id="bootstrap-table" class="table">
+				<thead>
+				<th><input type="checkbox" name="all" onclick="allSelect()"> </th>
+				<th>岗位编号</th>
+				<th>岗位编码</th>
+				<th>岗位名称</th>
+				<th>显示顺序</th>
+				<th>状态</th>
+				<th>创建时间</th>
+				<th colspan="2">操作</th>
+				</thead>
+				<tbody id="tb">
+
+				</tbody>
+			</table>
+			<button onclick="indexPage()" class="btn btn-success btn-xs">首页</button>
+<!--			<a href="javascript:void(0)" onclick="indexPage()" class="btn btn-success btn-sm">首页</a>-->
+			<button onclick="prePage()" class="btn btn-success btn-xs">上一页</button>
+			<font id="font"></font>
+			<button onclick="nextPage()" class="btn btn-success btn-xs">下一页</button>
+			<button onclick="endPage()" class="btn btn-success btn-xs">尾页</button>
+<!--			<a href="javascript:void(0)" onclick="prePage()" class="btn btn-success btn-sm">上一页</a>-->
+<!--			<a href="javascript:void(0)" onclick="nextPage()" class="btn btn-success btn-sm">下一页</a>-->
+<!--			<a href="javascript:void(0)" onclick="endPage()" class="btn btn-success btn-sm">尾页</a>-->
+		</div>
+	</div>
+</div>
+<th:block th:include="include :: footer" />
+<%--增加模态框--%>
+<div class="modal fade" id="two" style="top:150px;width: 60%;left: 20%">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content" >
+	<form class="form-horizontal m" id="form-post-add">
+		<div class="form-group">
+			<label class="col-sm-3 control-label is-required">岗位名称：</label>
+			<div class="col-sm-8">
+				<input class="form-control" type="text" name="postName2" id="postName2" required>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label is-required">岗位编码：</label>
+			<div class="col-sm-8">
+				<input class="form-control" type="text" name="postCode2" id="postCode2" required>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label is-required">显示顺序：</label>
+			<div class="col-sm-8">
+				<input class="form-control" type="text" name="postSort2" id="postSort2" required>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label">岗位状态：</label>
+			<div class="col-sm-8">
+				<!--<div class="radio-box" >-->
+					<input type="radio" name="status2" value="0" checked="checked">正常
+					<input type="radio" name="status2" value="1" >停用
+				<!--</div>-->
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label">备注：</label>
+			<div class="col-sm-8">
+				<textarea id="remark2" name="remark2" class="form-control"></textarea>
+			</div>
+		</div><br>
+		<div class="form-group">
+			<div class="col-sm-8" style="left: 80%">
+			<button type="button" class="btn btn-success btn-sm" onclick="add()">保存
+			</button>
+			<button type="button" class="btn btn-success btn-sm" onclick="adds()">关闭
+			</button>
+			</div>
+		</div>
+
+	</form>
+</div>
+</div>
+<%--修改模态框--%>
+<div class="modal fade" id="one" style="top:150px;width: 60%;left: 20%">
+	<div class="wrapper wrapper-content animated fadeInRight ibox-content" >
+		<form class="form-horizontal m" id="form-post-update">
+			<div class="form-group">
+				<label class="col-sm-3 control-label is-required">岗位名称：</label>
+				<div class="col-sm-8">
+					<input class="form-control" type="text" name="postName" id="postName" required>
+					<input type="hidden" id="postId">
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label class="col-sm-3 control-label is-required">岗位编码：</label>
+				<div class="col-sm-8">
+					<input class="form-control" type="text" name="postCode" id="postCode" required>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label is-required">显示顺序：</label>
+				<div class="col-sm-8">
+					<input class="form-control" type="text" name="postSort" id="postSort" required>
+				</div>
+			</div>
+			<!--<div class="form-group">
+			<label class="col-sm-3 control-label is-required">创建时间：</label>
+			<div class="col-sm-8">
+				<input class="form-control" type="Date" name="createTime" id="createTime" required>
+			</div>
+		</div>-->
+			<div class="form-group">
+				<label class="col-sm-3 control-label">岗位状态：</label>
+				<div class="col-sm-8">
+					<!--<div class="radio-box" >-->
+					<input type="radio" name="status" value="0" checked="checked">正常
+					<input type="radio" name="status" value="1" >停用
+					<!--</div>-->
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label">备注：</label>
+				<div class="col-sm-8">
+					<textarea id="remark" name="remark" class="form-control"></textarea>
+				</div>
+			</div><br>
+			<div class="form-group">
+				<div class="col-sm-8" style="left: 80%">
+			<button type="button" class="btn btn-success btn-sm" onclick="update()">保存
+			</button>
+			<button type="button" class="btn btn-success btn-sm" onclick="updates()">关闭
+			</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+</body>
+</html>
+<script>
+	var cutPage;//当前页
+	var allPage;//总页码
+
+	var iPage;
+	var pPage;
+	var nPage;
+	var ePage;
+	function indexPage() {
+		load(iPage);//首页
+	}
+	function prePage() {
+		load(pPage);//上一页
+	}
+	function nextPage() {
+		load(nPage);//下一页
+	}
+	function endPage() {
+		load(ePage);//尾页
+	}
+	function load(p,postName,postCode,status) {
+		// console.log(2);
+		$.ajax({
+			url:"/qw/list",
+			type:"get",
+			data:{
+				"page":p,
+				"postName":postName,
+				"postCode":postCode,
+				"status":status
+			},
+			dataType:"json",
+			success:function (data) {
+				/*console.log(1);*/
+				cutPage = data.cutPage;
+				allPage = data.allPage;
+				iPage = data.indexPage;
+				pPage = data.prePage;
+				nPage = data.nextPage;
+				ePage = data.endPage;
+				// console.log(2);
+				//把当前页码和总页码拼接进去
+				var caPage = cutPage+"页/"+allPage+"页";
+				$("#font").html(caPage);
+
+				var html = "";
+				for (var i = 0; i < data.list.length; i++) {
+					html += "<tr>" +
+							"<td><input type='checkbox' name='allId' value='" + data.list[i].postId + "'></td>" +
+							"<td>" + data.list[i].postId + "</td>" +
+							"<td>" + data.list[i].postCode + "</td>" +
+							"<td>" + data.list[i].postName + "</td>" +
+							"<td>" + data.list[i].postSort + "</td>" +
+							"<td>" + data.list[i].statusValue.statusName + "</td>" +
+							"<td>" + data.list[i].createTime + "</td>" +
+							"<td><button type='button' onclick='updatePage(this)' class=\"btn btn-success btn-xs ' + editFlag + '\">编辑</button></td>" +
+							"<td><button type='button' onclick='deletePage(this)' class=\"btn btn-danger btn-xs ' + removeFlag + '\">删除</button></td>" +
+							"</tr>"
+				}
+				//转换网页对应格式//把拼接的html变量信息显示在id=tb的标签上
+				$("#tb").html(html)
+
+			},
+			error: function (data) {
+				alert("ajax请求失败");
+			}
+		})
+	}
+//打开修改模态框
+	function updatePage(obj) {
+		//获取当前对象
+		var postId = $(obj).parent().parent().find("td").eq(1).text();
+		var postName = $(obj).parent().parent().find("td").eq(3).text();
+		var postCode = $(obj).parent().parent().find("td").eq(2).text();
+		var postSort = $(obj).parent().parent().find("td").eq(4).text();
+		var status = $(obj).parent().parent().find("td").eq(5).text();
+		// var createTime = $(obj).parent().parent().find("td").eq(7).text();
+
+         $("#one").modal("show");
+		//把选中行的数据显示在模态框中
+		$("#postId").val(postId);
+		$("#postName").val(postName);
+		$("#postCode").val(postCode);
+		$("#postSort").val(postSort);
+		// $("#createTime").val(createTime);
+		//单选框status的值
+		$("input[value='"+status+"']").prop("checked",true);
+	}
+//打开增加模态框
+    function addPage() {
+		//清空模态框中的值
+		//清文本框的值
+	/*	$("#empName").val("");
+		$("#id").val("");
+		//清单选框
+		$("input[name='sex']:checked").prop("checked",false);
+		//清除下拉框
+		$("#job").find("option").prop("selected",false);
+		$("#dept").find("option").prop("selected",false);
+		//清理时间
+		$("#time").val("");
+		*/
+		$("#two").modal("show");
+	}
+//关闭修改模态框
+	function updates() {
+		$("#one").modal("hide");
+	}
+//关闭增加模态框
+	function adds() {
+		$("#two").modal("hide");
+	}
+//修改
+	function update() {
+		//获取模态框中的值
+		var postId = $("#postId").val();
+		var postName = $("#postName").val();
+		var postCode = $("#postCode").val();
+		var status = $("input[name='status']:checked").val();
+		var remark = $("#remark").val();
+		var postSort = $("#postSort").val();
+		// var createTime = $().parent().parent().find("td").eq(7).text();
+		//构建js对象
+		var params = {
+			"postId":postId,
+			"postName":postName,
+			"postCode":postCode,
+			"status":status,
+			"remark":remark,
+			"postSort":postSort
+		}
+		$.ajax({
+			url:"/qw/update",
+			type:"get",
+			data:params,
+			dataType: "json",
+			success:function (info) {
+				if(info!=0){
+					//刷新
+					load(1);
+					//关闭模态框
+					$("#one").modal("hide");
+				}else {
+					alert("修改失败");
+				}
+			}
+		})
+	}
+//增加
+	function add() {
+		//获取文本框中的值
+		var postName = $("#postName2").val();
+		var postCode = $("#postCode2").val();
+		var status = $("input[name='status2']:checked").val();
+		var remark = $("#remark2").val();
+		var postSort = $("#postSort2").val();
+
+		//构建js对象
+		var params = {
+			"postName":postName,
+			"postCode":postCode,
+			"status":status,
+			"remark":remark,
+			"postSort":postSort
+		}
+        $.ajax({
+			url:"/qw/add",
+			type:"get",
+			data:params,
+			dataType: "json",
+			success:function (info) {
+                if(info!=0){
+					//刷新
+					load(1);
+					//关闭模态框
+					$("#two").modal("hide");
+				}else {
+                	alert("添加失败");
+				}
+			}
+		})
+	}
+//删除
+	function deletePage(obj) {
+		//确认框
+		var rr = confirm("你确定要删除吗");
+		//获取当前对象的id
+		if (rr){
+			var postId = $(obj).parent().parent().find("td").eq(1).text();
+			$.ajax({
+				url:"/qw/delete",
+				type:"get",
+				data:{
+					"postId":postId
+				},
+				dataType:"text",
+				success:function (info) {
+					if(info!=0){
+						//刷新
+						load(1);
+					}else {
+						alert("删除失败");
+					}
+				}
+			})
+		}
+	}
+//查询
+	function select() {
+        var postCode = $("#postCodeSelect").val();
+        var postName = $("#postNameSelect").val();
+        var status = $("#statusSelect").val();
+        // alert(status);
+       /* alert(postCode);
+        alert(postName);*/
+        load(1,postName,postCode,status);
+	}
+//批量删除
+    function deleteAll() {
+		var rr = confirm("你确定要删除吗");
+		if(rr){
+			var allId = "";
+			$("input[name='allId']:checked").each(function () {
+				allId += $(this).val()+"," ;
+			})
+			$.ajax({
+				url:"/qw/deleteAll",
+				type:"get",
+				data:{"id":allId},
+				dataType:"json",
+				success:function (data) {
+					//刷新
+					load(1);
+				}
+			})
+		}
+	}
+//全部选中
+	function allSelect() {
+        $("input[name='allId']").prop("checked",$("input[name='all']").prop("checked"));
+	}
+
+</script>
